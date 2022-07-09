@@ -9,7 +9,7 @@
           <v-select
             v-model="select"
             :items="items"
-            :rules="[v => !!v || 'Item is required']"
+            :rules="[(v) => !!v || 'Item is required']"
             label="Банк"
             variant="solo"
             no-data-text="Пусто"
@@ -20,7 +20,7 @@
             v-model="select"
             :items="items"
             variant="solo"
-            :rules="[v => !!v || 'Item is required']"
+            :rules="[(v) => !!v || 'Item is required']"
             label="Ипотечная программа"
             no-data-text="Пусто"
             required
@@ -30,7 +30,7 @@
             v-model="select"
             :items="items"
             variant="solo"
-            :rules="[v => !!v || 'Item is required']"
+            :rules="[(v) => !!v || 'Item is required']"
             label="Выбрать ставку"
             no-data-text="Пусто"
             required
@@ -38,7 +38,7 @@
 
           <v-checkbox
             v-model="checkbox"
-            :rules="[v => !!v || 'You must agree to continue!']"
+            :rules="[(v) => !!v || 'You must agree to continue!']"
             label="Отделка"
             required
           ></v-checkbox>
@@ -48,14 +48,6 @@
             :rules="nameRules"
             variant="solo"
             label="Площадь"
-            required
-          ></v-text-field>
-
-          <v-text-field
-            v-model="name"
-            :rules="nameRules"
-            variant="solo"
-            label="Стоимость объекта"
             required
           ></v-text-field>
 
