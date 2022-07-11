@@ -233,7 +233,7 @@
             <!--  -->
             <v-container
               fluid
-              class="fill-height my-5 px-8 pt-10 rounded-lg bg-grey-lighten-3"
+              class="fill-height mt-5 px-8 pt-10 rounded-lg bg-grey-lighten-3"
             >
               <v-list-item-subtitle class="font-weight-black text-wrap"
                 >Стоимость объекта недвижимости с учетом
@@ -253,7 +253,7 @@
             <!-- отделка -->
             <v-container
               fluid
-              class="fill-height mt-5 px-10 pt-10 rounded-lg bg-grey-lighten-3"
+              class="d-none fill-height mt-5 px-10 pt-10 rounded-lg bg-grey-lighten-3"
             >
               <v-checkbox
                 v-model="finishingCbox"
@@ -290,24 +290,24 @@
           <v-list-item-subtitle class="mt-5 font-weight-black text-wrap"
             >Сумма удорожания</v-list-item-subtitle
           >
-          <div class="text-h3" style="word-break: break-word">0</div>
+          <div class="text-h4" style="word-break: break-word">0</div>
         </div>
-        <div class="my-5 px-8 py-7 rounded-lg bg-grey-lighten-3">
+        <div class="mt-5 px-8 py-7 rounded-lg bg-grey-lighten-3">
           <v-list-item-subtitle class="font-weight-black text-wrap"
             >Новая стоимость объекта с учетом отделки</v-list-item-subtitle
           >
-          <div class="text-h3" style="word-break: break-word">0</div>
+          <div class="text-h4" style="word-break: break-word">0</div>
 
           <v-list-item-subtitle class="mt-5 font-weight-black text-wrap"
             >Итого стоимость объекта с учетом отделки и скидки</v-list-item-subtitle
           >
-          <div class="text-h3" style="word-break: break-word">0</div>
+          <div class="text-h4" style="word-break: break-word">0</div>
 
           <v-list-item-subtitle class="mt-5 font-weight-black"
             >Стандартный ежемесячный платеж</v-list-item-subtitle
           >
 
-          <div class="text-h3" style="word-break: break-word">
+          <div class="text-h4" style="word-break: break-word">
             {{ costMonthCalc }}
           </div>
 
@@ -320,7 +320,7 @@
                 >Ежемесячный платеж на период
                 субсидирования</v-list-item-subtitle
               >
-              <div class="text-h3" style="word-break: break-word">0</div>
+              <div class="text-h4" style="word-break: break-word">0</div>
             </v-col>
             <v-col
               cols="4"
@@ -329,14 +329,14 @@
               <v-list-item-subtitle class="mt-5 font-weight-black text-wrap"
                 >Выгода в месяц</v-list-item-subtitle
               >
-              <div class="text-h3" style="word-break: break-word">0</div>
+              <div class="text-h4" style="word-break: break-word">0</div>
             </v-col>
           </v-col>
 
           <v-btn
             color="success"
             block
-            class="text-wrap my-4 mt-10"
+            class="text-wrap my-4 mt-5"
             size="x-large"
             @click="validate"
           >
