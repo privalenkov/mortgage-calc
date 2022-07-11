@@ -20,8 +20,8 @@
                 v-model="selectedBank"
                 @update:modelValue="clearSelectedRatesAndMortgage"
                 :items="banksList"
-                :rules="[(v) => !!v || 'Банк не выбран']"
-                label="Банк"
+                :rules="[(v) => !!v || 'Кредитная организация не выбрана']"
+                label="Выберите кредитную организацию"
                 variant="solo"
                 no-data-text="Пусто"
                 required
@@ -33,23 +33,11 @@
                 item-title="programName"
                 :items="bankPrograms[selectedBank]"
                 variant="solo"
-                :rules="[(v) => !!v || 'Ипотечная программа не выбрана']"
-                label="Ипотечная программа"
+                :rules="[(v) => !!v || 'Программа кредитования не выбрана']"
+                label="Выберите программу кредитования"
                 no-data-text="Пусто"
                 required
                 @update:modelValue="clearSelectedRates"
-              ></v-select>
-
-              <v-select
-                v-model="selectedRates"
-                :return-object="true"
-                item-title="nameRate"
-                :items="getRates"
-                variant="solo"
-                :rules="[(v) => !!v || 'Ставка не выбрана']"
-                label="Выбрать ставку"
-                no-data-text="Пусто"
-                required
               ></v-select>
             </v-container>
 
@@ -59,35 +47,213 @@
             >
               <v-text-field
                 v-model="costObject"
-                :rules="[(v) => !!v || 'Введите стоимость объекта']"
+                :rules="[(v) => !!v || 'Укажите стоимость объекта']"
                 variant="solo"
-                label="Стоимость объекта"
+                label="Стоимость объекта (квартиры - из шахматки)"
                 required
               ></v-text-field>
 
+              <!-- площадь -->
+              <v-row>
+                <v-col cols="8">
+                  <v-text-field
+                    v-model="costObject"
+                    :rules="[(v) => !!v || 'Укажите площадь объекта']"
+                    variant="solo"
+                    label="Укажите площадь объекта (с коэфф)., кв.м."
+                    required
+                  ></v-text-field>
+                </v-col>
+                <v-col>
+                  <v-text-field
+                    v-model="costObject"
+                    variant="solo"
+                    label="Площадь терассы"
+                    required
+                  ></v-text-field>
+                </v-col>
+              </v-row>
+            </v-container>
+
+            <!-- отделка -->
+            <v-container
+              fluid
+              class="fill-height my-5 px-8 pt-10 rounded-lg bg-grey-lighten-3"
+            >
+              <v-select
+                v-model="selectedRates"
+                :return-object="true"
+                item-title="nameRate"
+                :items="getRates"
+                variant="solo"
+                :rules="[(v) => !!v || 'Ставка не выбрана']"
+                label="Укажите текущую отделку объекта (квартиры)"
+                no-data-text="Пусто"
+                required
+              ></v-select>
+
+              <v-select
+                v-model="selectedRates"
+                :return-object="true"
+                item-title="nameRate"
+                :items="getRates"
+                variant="solo"
+                :rules="[(v) => !!v || 'Ставка не выбрана']"
+                label="Укажите новый тип отделки (или выберите нет)"
+                no-data-text="Пусто"
+                required
+              ></v-select>
+            </v-container>
+
+            <!-- выберите размер скидки -->
+            <v-container
+              fluid
+              class="fill-height my-5 px-8 pt-10 rounded-lg bg-grey-lighten-3"
+            >
+              <v-list-item-subtitle class="mb-5 font-weight-black text-wrap"
+                >Выберите размер скидки</v-list-item-subtitle
+              >
+              <v-select
+                v-model="selectedRates"
+                :return-object="true"
+                item-title="nameRate"
+                :items="getRates"
+                variant="solo"
+                :rules="[(v) => !!v || 'Ставка не выбрана']"
+                label="Платная бронь"
+                no-data-text="Пусто"
+                required
+              ></v-select>
+
+              <v-text-field
+                v-model="costObject"
+                :rules="[(v) => !!v || 'Укажите стоимость объекта']"
+                variant="solo"
+                label="UDS"
+                required
+              ></v-text-field>
+
+              <v-select
+                v-model="selectedRates"
+                :return-object="true"
+                item-title="nameRate"
+                :items="getRates"
+                variant="solo"
+                :rules="[(v) => !!v || 'Ставка не выбрана']"
+                label="Скидка за скорость"
+                no-data-text="Пусто"
+                required
+              ></v-select>
+            </v-container>
+
+            <!-- первоначальный взнос  -->
+            <v-container
+              fluid
+              class="fill-height my-5 px-8 pt-10 rounded-lg bg-grey-lighten-3"
+            >
               <v-list-subheader class="font-weight-black"
-                >Первоначальный взнос {{ downPaymentPerc }}%</v-list-subheader
+                >Минимальный размер ПВ {{ downPaymentPerc }}%</v-list-subheader
               >
               <v-text-field
                 v-model="downPayment"
                 :rules="downPaymentRules"
                 variant="solo"
-                label="Первоначальный взнос"
-                required
-              ></v-text-field>
-
-              <v-text-field
-                v-model="mortgageTerm"
-                :rules="mortgageTermRules"
-                variant="solo"
-                label="Срок ипотеки мес."
+                label="% первоначального взноса"
                 required
               ></v-text-field>
             </v-container>
 
+            <!-- кредит -->
             <v-container
               fluid
-              class="fill-height my-5 px-10 pt-10 rounded-lg bg-grey-lighten-3"
+              class="fill-height my-5 px-8 pt-10 rounded-lg bg-grey-lighten-3"
+            >
+              <v-list-item-subtitle class="font-weight-black text-wrap"
+                >Сумма первоначального взноса</v-list-item-subtitle
+              >
+              <div class="text-h4" style="word-break: break-word">0</div>
+              <v-list-item-subtitle class="mt-5 font-weight-black text-wrap"
+                >Сумма кредита</v-list-item-subtitle
+              >
+              <div class="text-h4" style="word-break: break-word">0</div>
+              <v-list-item-subtitle class="mt-5 font-weight-black text-wrap"
+                >Базовая ставка, % годовых</v-list-item-subtitle
+              >
+              <div class="text-h4 mb-5" style="word-break: break-word">0</div>
+              <v-select
+                v-model="selectedRates"
+                :return-object="true"
+                item-title="nameRate"
+                :items="getRates"
+                variant="solo"
+                :rules="[(v) => !!v || 'Ставка не выбрана']"
+                label="Срок кредита, месяцев"
+                no-data-text="Пусто"
+                required
+              ></v-select>
+            </v-container>
+
+            <!-- срок субсидирования -->
+            <v-container
+              fluid
+              class="fill-height my-5 px-8 pt-5 rounded-lg bg-grey-lighten-3"
+            >
+              <v-list-subheader class="font-weight-black"
+                >Уточнить</v-list-subheader
+              >
+              <v-select
+                v-model="selectedRates"
+                :return-object="true"
+                item-title="nameRate"
+                :items="getRates"
+                variant="solo"
+                :rules="[(v) => !!v || 'Ставка не выбрана']"
+                label="Срок субсидирования, месяцев"
+                no-data-text="Пусто"
+                required
+              ></v-select>
+
+              <v-select
+                v-model="selectedRates"
+                :return-object="true"
+                item-title="nameRate"
+                :items="getRates"
+                variant="solo"
+                :rules="[(v) => !!v || 'Ставка не выбрана']"
+                label="Итоговая ставка с учетом субсидирования, % годовых"
+                no-data-text="Пусто"
+                required
+              ></v-select>
+              <v-list-item-subtitle class="mt-5 font-weight-black text-wrap"
+                >Процент удорожания</v-list-item-subtitle
+              >
+              <div class="text-h4" style="word-break: break-word">0</div>
+            </v-container>
+
+            <!--  -->
+            <v-container
+              fluid
+              class="fill-height my-5 px-8 pt-10 rounded-lg bg-grey-lighten-3"
+            >
+              <v-list-item-subtitle class="font-weight-black text-wrap"
+                >Стоимость объекта недвижимости с учетом
+                удорожания</v-list-item-subtitle
+              >
+              <div class="text-h4" style="word-break: break-word">0</div>
+              <v-list-item-subtitle class="mt-5 font-weight-black text-wrap"
+                >Уточнение суммы первоначального взноса</v-list-item-subtitle
+              >
+              <div class="text-h4" style="word-break: break-word">0</div>
+              <v-list-item-subtitle class="mt-5 font-weight-black text-wrap"
+                >Сумма кредита</v-list-item-subtitle
+              >
+              <div class="text-h4 mb-5" style="word-break: break-word">0</div>
+            </v-container>
+
+            <!-- отделка -->
+            <v-container
+              fluid
+              class="fill-height mt-5 px-10 pt-10 rounded-lg bg-grey-lighten-3"
             >
               <v-checkbox
                 v-model="finishingCbox"
@@ -116,23 +282,56 @@
       </v-row>
     </v-col>
     <v-col sm="6">
-      <div style="top: 0" class="position-sticky rounded-lg bg-grey-lighten-3">
-        <div class="my-5 px-10 py-10">
-          <div class="text-red">Увеличить стоимость на 0%</div>
+      <div style="top: 0" class="position-sticky">
+        <div class="my-5 px-8 py-5 rounded-lg bg-grey-lighten-3">
+          <v-list-item-title class="font-weight-black text-wrap"
+            >Справочно</v-list-item-title
+          >
+          <v-list-item-subtitle class="mt-5 font-weight-black text-wrap"
+            >Сумма удорожания</v-list-item-subtitle
+          >
+          <div class="text-h3" style="word-break: break-word">0</div>
+        </div>
+        <div class="my-5 px-8 py-7 rounded-lg bg-grey-lighten-3">
+          <v-list-item-subtitle class="font-weight-black text-wrap"
+            >Новая стоимость объекта с учетом отделки</v-list-item-subtitle
+          >
+          <div class="text-h3" style="word-break: break-word">0</div>
 
           <v-list-item-subtitle class="mt-5 font-weight-black text-wrap"
-            >Стоимость объекта недвижимости с предоставлением
-            субсидии</v-list-item-subtitle
+            >Итого стоимость объекта с учетом отделки и скидки</v-list-item-subtitle
           >
-          <div class="text-h2" style="word-break: break-word">0</div>
+          <div class="text-h3" style="word-break: break-word">0</div>
 
           <v-list-item-subtitle class="mt-5 font-weight-black"
-            >Ежемесячный платеж</v-list-item-subtitle
+            >Стандартный ежемесячный платеж</v-list-item-subtitle
           >
 
-          <div class="text-h2" style="word-break: break-word">
+          <div class="text-h3" style="word-break: break-word">
             {{ costMonthCalc }}
           </div>
+
+          <v-col class="d-flex px-0 py-0" style="gap: 20px;">
+            <v-col
+              cols="8"
+              class="px-0 py-0 d-flex flex-column justify-space-between"
+            >
+              <v-list-item-subtitle class="mt-5 font-weight-black text-wrap"
+                >Ежемесячный платеж на период
+                субсидирования</v-list-item-subtitle
+              >
+              <div class="text-h3" style="word-break: break-word">0</div>
+            </v-col>
+            <v-col
+              cols="4"
+              class="px-0 py-0 d-flex flex-column justify-space-between"
+            >
+              <v-list-item-subtitle class="mt-5 font-weight-black text-wrap"
+                >Выгода в месяц</v-list-item-subtitle
+              >
+              <div class="text-h3" style="word-break: break-word">0</div>
+            </v-col>
+          </v-col>
 
           <v-btn
             color="success"
@@ -158,6 +357,7 @@ export default {
   name: "HomePage",
   data() {
     return {
+      data: null,
       isAlert: false,
       valid: true,
       banksList: [
@@ -226,6 +426,15 @@ export default {
       ],
       costMonth: 0,
     };
+  },
+  async mounted() {
+    if (localStorage.data) {
+      this.data = JSON.parse(localStorage.data);
+    }
+    const data = await fetch("http://localhost:4000/").then((res) =>
+      res.json()
+    );
+    localStorage.data = JSON.stringify(data);
   },
   computed: {
     getRates() {
