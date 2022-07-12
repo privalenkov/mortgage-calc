@@ -17,9 +17,19 @@
               class="fill-height my-5 px-10 pt-10 rounded-lg bg-grey-lighten-3"
             >
               <v-select
+                v-model="selectedCity"
+                :items="['Киров', 'Ижевск', 'Ульяновск']"
+                :rules="[(v) => !!v || 'Кредитная организация не выбрана']"
+                label="Укажите город, где планируется сделка"
+                variant="solo"
+                no-data-text="Пусто"
+                required
+              ></v-select>
+
+              <v-select
                 v-model="selectedBank"
                 @update:modelValue="clearSelectedRatesAndMortgage"
-                :items="banksList"
+                :items="getBanks"
                 :rules="[(v) => !!v || 'Кредитная организация не выбрана']"
                 label="Выберите кредитную организацию"
                 variant="solo"
@@ -29,9 +39,7 @@
 
               <v-select
                 v-model="selectedBankProgram"
-                :return-object="true"
-                item-title="programName"
-                :items="bankPrograms[selectedBank]"
+                :items="getBankPrograms"
                 variant="solo"
                 :rules="[(v) => !!v || 'Программа кредитования не выбрана']"
                 label="Выберите программу кредитования"
@@ -57,7 +65,7 @@
               <v-row>
                 <v-col cols="8">
                   <v-text-field
-                    v-model="costObject"
+                    v-model="objectArea"
                     :rules="[(v) => !!v || 'Укажите площадь объекта']"
                     variant="solo"
                     label="Укажите площадь объекта (с коэфф)., кв.м."
@@ -66,13 +74,32 @@
                 </v-col>
                 <v-col>
                   <v-text-field
-                    v-model="costObject"
+                    v-model="terraceArea"
                     variant="solo"
                     label="Площадь терассы"
                     required
                   ></v-text-field>
                 </v-col>
               </v-row>
+
+              <v-select
+                v-model="selectedFormatObject"
+                :items="[
+                  'Студия',
+                  'Однокомнатная',
+                  'Евро двухкомнатная',
+                  'Двухкомнатная',
+                  'Евро трехкомнатная',
+                  'Трехкомнатная',
+                  'Евро четырехкомнатная',
+                  'Четырехкомнатная',
+                ]"
+                variant="solo"
+                :rules="[(v) => !!v || 'Программа кредитования не выбрана']"
+                label="Укажите формат объекта (кватиры - из шахматки)"
+                no-data-text="Пусто"
+                required
+              ></v-select>
             </v-container>
 
             <!-- отделка -->
@@ -81,10 +108,16 @@
               class="fill-height my-5 px-8 pt-10 rounded-lg bg-grey-lighten-3"
             >
               <v-select
-                v-model="selectedRates"
-                :return-object="true"
+                v-model="selectedCurrentTypeTrim"
                 item-title="nameRate"
-                :items="getRates"
+                :items="[
+                  'Черновая',
+                  'Базовая',
+                  'Получистовая',
+                  'Чистовая - WOOD',
+                  'Чистовая - STONE',
+                  'НЕТ',
+                ]"
                 variant="solo"
                 :rules="[(v) => !!v || 'Ставка не выбрана']"
                 label="Укажите текущую отделку объекта (квартиры)"
@@ -93,10 +126,16 @@
               ></v-select>
 
               <v-select
-                v-model="selectedRates"
-                :return-object="true"
+                v-model="selectedNewTypeTrim"
                 item-title="nameRate"
-                :items="getRates"
+                :items="[
+                  'Черновая',
+                  'Базовая',
+                  'Получистовая',
+                  'Чистовая - WOOD',
+                  'Чистовая - STONE',
+                  'НЕТ',
+                ]"
                 variant="solo"
                 :rules="[(v) => !!v || 'Ставка не выбрана']"
                 label="Укажите новый тип отделки (или выберите нет)"
@@ -114,10 +153,8 @@
                 >Выберите размер скидки</v-list-item-subtitle
               >
               <v-select
-                v-model="selectedRates"
-                :return-object="true"
-                item-title="nameRate"
-                :items="getRates"
+                v-model="payReserv"
+                :items="['0', '20000', '50000']"
                 variant="solo"
                 :rules="[(v) => !!v || 'Ставка не выбрана']"
                 label="Платная бронь"
@@ -126,7 +163,7 @@
               ></v-select>
 
               <v-text-field
-                v-model="costObject"
+                v-model="UDS"
                 :rules="[(v) => !!v || 'Укажите стоимость объекта']"
                 variant="solo"
                 label="UDS"
@@ -134,10 +171,37 @@
               ></v-text-field>
 
               <v-select
-                v-model="selectedRates"
+                v-model="tradeIn"
+                :items="['0.00', '45000.00']"
+                variant="solo"
+                :rules="[(v) => !!v || 'Ставка не выбрана']"
+                label="Трейд-ин"
+                no-data-text="Пусто"
+                required
+              ></v-select>
+
+              <v-col>
+                <v-row class="align-center mb-4" style="gap: 10px;">
+                  <v-list-item-subtitle class="font-weight-black text-wrap"
+                    >Скидка на чистовую отделку
+                    {{
+                      selectedNewTypeTrim && `"${selectedNewTypeTrim}"`
+                    }}</v-list-item-subtitle
+                  >
+                  <v-list-item-subtitle class="font-weight-black text-wrap"
+                    >{{ calcDiscountCleanTrim }}
+                  </v-list-item-subtitle>
+                </v-row>
+              </v-col>
+
+              <v-select
+                v-model="speedDiscount"
+                :items="[
+                  { title: '0%', value: 0 },
+                  { title: '3%', value: 3 },
+                ]"
                 :return-object="true"
-                item-title="nameRate"
-                :items="getRates"
+                item-title="title"
                 variant="solo"
                 :rules="[(v) => !!v || 'Ставка не выбрана']"
                 label="Скидка за скорость"
@@ -152,7 +216,7 @@
               class="fill-height my-5 px-8 pt-10 rounded-lg bg-grey-lighten-3"
             >
               <v-list-subheader class="font-weight-black"
-                >Минимальный размер ПВ {{ downPaymentPerc }}%</v-list-subheader
+                >Минимальный размер ПВ {{ getSelectedBankProgram[0]?.downPayment || 0 }}</v-list-subheader
               >
               <v-text-field
                 v-model="downPayment"
@@ -171,26 +235,22 @@
               <v-list-item-subtitle class="font-weight-black text-wrap"
                 >Сумма первоначального взноса</v-list-item-subtitle
               >
-              <div class="text-h4" style="word-break: break-word">0</div>
+              <div class="text-h4" style="word-break: break-word">{{ calcDownPayment }}</div>
               <v-list-item-subtitle class="mt-5 font-weight-black text-wrap"
                 >Сумма кредита</v-list-item-subtitle
               >
-              <div class="text-h4" style="word-break: break-word">0</div>
+              <div class="text-h4" style="word-break: break-word">{{ calcCreditSum }}</div>
               <v-list-item-subtitle class="mt-5 font-weight-black text-wrap"
                 >Базовая ставка, % годовых</v-list-item-subtitle
               >
-              <div class="text-h4 mb-5" style="word-break: break-word">0</div>
-              <v-select
-                v-model="selectedRates"
-                :return-object="true"
-                item-title="nameRate"
-                :items="getRates"
+              <div class="text-h4 mb-5" style="word-break: break-word">{{ this.getSelectedBankProgram[0]?.standartRate || 0}}</div>
+              <v-text-field
+                v-model="creditPeriod"
+                :rules="downPaymentRules"
                 variant="solo"
-                :rules="[(v) => !!v || 'Ставка не выбрана']"
                 label="Срок кредита, месяцев"
-                no-data-text="Пусто"
                 required
-              ></v-select>
+              ></v-text-field>
             </v-container>
 
             <!-- срок субсидирования -->
@@ -205,7 +265,7 @@
                 v-model="selectedRates"
                 :return-object="true"
                 item-title="nameRate"
-                :items="getRates"
+                :items="[]"
                 variant="solo"
                 :rules="[(v) => !!v || 'Ставка не выбрана']"
                 label="Срок субсидирования, месяцев"
@@ -217,23 +277,23 @@
                 v-model="selectedRates"
                 :return-object="true"
                 item-title="nameRate"
-                :items="getRates"
+                :items="[]"
                 variant="solo"
                 :rules="[(v) => !!v || 'Ставка не выбрана']"
                 label="Итоговая ставка с учетом субсидирования, % годовых"
                 no-data-text="Пусто"
                 required
               ></v-select>
-              <v-list-item-subtitle class="mt-5 font-weight-black text-wrap"
+              <v-list-item-subtitle class="font-weight-black text-wrap"
                 >Процент удорожания</v-list-item-subtitle
               >
-              <div class="text-h4" style="word-break: break-word">0</div>
+              <div class="text-h4 mb-2" style="word-break: break-word">0</div>
             </v-container>
 
             <!--  -->
             <v-container
               fluid
-              class="fill-height mt-5 px-8 pt-10 rounded-lg bg-grey-lighten-3"
+              class="fill-height mt-5 px-6 pt-6 rounded-lg bg-grey-lighten-3"
             >
               <v-list-item-subtitle class="font-weight-black text-wrap"
                 >Стоимость объекта недвижимости с учетом
@@ -247,35 +307,7 @@
               <v-list-item-subtitle class="mt-5 font-weight-black text-wrap"
                 >Сумма кредита</v-list-item-subtitle
               >
-              <div class="text-h4 mb-5" style="word-break: break-word">0</div>
-            </v-container>
-
-            <!-- отделка -->
-            <v-container
-              fluid
-              class="d-none fill-height mt-5 px-10 pt-10 rounded-lg bg-grey-lighten-3"
-            >
-              <v-checkbox
-                v-model="finishingCbox"
-                label="Отделка"
-                required
-              ></v-checkbox>
-              <v-text-field
-                v-if="finishingCbox"
-                :rules="nameRules"
-                variant="solo"
-                label="Площадь"
-                required
-              ></v-text-field>
-
-              <v-text-field
-                v-if="finishingCbox"
-                v-show="finishingCbox"
-                :rules="nameRules"
-                variant="solo"
-                label="Стоимость отделки"
-                required
-              ></v-text-field>
+              <div class="text-h4" style="word-break: break-word">0</div>
             </v-container>
           </v-form>
         </v-col>
@@ -291,27 +323,36 @@
             >Сумма удорожания</v-list-item-subtitle
           >
           <div class="text-h4" style="word-break: break-word">0</div>
+          <v-list-item-subtitle class="mt-5 font-weight-black text-wrap"
+            >Размер КВ, %</v-list-item-subtitle
+          >
+          <div class="text-h4" style="word-break: break-word">0</div>
         </div>
         <div class="mt-5 px-8 py-7 rounded-lg bg-grey-lighten-3">
           <v-list-item-subtitle class="font-weight-black text-wrap"
             >Новая стоимость объекта с учетом отделки</v-list-item-subtitle
           >
-          <div class="text-h4" style="word-break: break-word">0</div>
+          <div class="text-h4" style="word-break: break-word">
+            {{ calcNewCostIncludeTrim }}
+          </div>
 
           <v-list-item-subtitle class="mt-5 font-weight-black text-wrap"
-            >Итого стоимость объекта с учетом отделки и скидки</v-list-item-subtitle
+            >Итого стоимость объекта с учетом отделки и
+            скидки</v-list-item-subtitle
           >
-          <div class="text-h4" style="word-break: break-word">0</div>
+          <div class="text-h4" style="word-break: break-word">
+            {{ calcTotalCostObjectIncludeTrimAndDiscount }}
+          </div>
 
           <v-list-item-subtitle class="mt-5 font-weight-black"
             >Стандартный ежемесячный платеж</v-list-item-subtitle
           >
 
           <div class="text-h4" style="word-break: break-word">
-            {{ costMonthCalc }}
+            {{ standartMonthPay }}
           </div>
 
-          <v-col class="d-flex px-0 py-0" style="gap: 20px;">
+          <v-col class="d-flex px-0 py-0" style="gap: 20px">
             <v-col
               cols="8"
               class="px-0 py-0 d-flex flex-column justify-space-between"
@@ -320,7 +361,9 @@
                 >Ежемесячный платеж на период
                 субсидирования</v-list-item-subtitle
               >
-              <div class="text-h4" style="word-break: break-word">0</div>
+              <div class="text-h4" style="word-break: break-word">
+                {{ costMonthPeriodSub }}
+              </div>
             </v-col>
             <v-col
               cols="4"
@@ -329,7 +372,7 @@
               <v-list-item-subtitle class="mt-5 font-weight-black text-wrap"
                 >Выгода в месяц</v-list-item-subtitle
               >
-              <div class="text-h4" style="word-break: break-word">0</div>
+              <div class="text-h4" style="word-break: break-word">{{ monthBenefit }}</div>
             </v-col>
           </v-col>
 
@@ -353,6 +396,144 @@
 </template>
 
 <script>
+const priceTrim = {
+  "Черновая": 0,
+  "Базовая": 2000,
+  "Получистовая": 2000,
+  "Чистовая - WOOD": 18000,
+  "Чистовая - STONE": 18000,
+  "НЕТ": 0,
+};
+
+const discountCl = {
+  "Киров": [
+    {
+      format: 'Студия',
+      index: 'Киров-Студия',
+      discount: 20,
+    },
+    {
+      format: 'однокомнатная',
+      index: 'Киров-Однокомнатная',
+      discount: 20,
+    },
+    {
+      format: 'Евро двухкомнатная',
+      index: 'Киров-Евро двухкомнатная',
+      discount: 20,
+    },
+    {
+      format: 'Двухкомнатная',
+      index: 'Киров-Двухкомнатная',
+      discount: 20,
+    },
+    {
+      format: 'Евро трехкомнатная',
+      index: 'Киров-Евро трехкомнатная',
+      discount: 20,
+    },
+    {
+      format: 'Трехкомнатная',
+      index: 'Киров-Трехкомнатная',
+      discount: 20,
+    },
+    {
+      format: 'Евро четырехкомнатная',
+      index: 'Киров-Евро четырехкомнатная',
+      discount: 20,
+    },
+    {
+      format: 'Четырехкомнатная',
+      index: 'Киров-Четырехкомнатная',
+      discount: 20,
+    },
+  ],
+  "Ижевск": [
+    {
+      format: 'Студия',
+      index: 'Ижевск-Студия',
+      discount: 20,
+    },
+    {
+      format: 'Однокомнатная',
+      index: 'Ижевск-Однокомнатная',
+      discount: 20,
+    },
+    {
+      format: 'Евро двухкомнатная',
+      index: 'Ижевск-Евро двухкомнаятная',
+      discount: 20,
+    },
+    {
+      format: 'Двухкомнатная',
+      index: 'Ижевск-Двухкомнаятная',
+      discount: 35,
+    },
+    {
+      format: 'Евро Трехкомнатная',
+      index: 'Ижевск-Евро трехкомнатная',
+      discount: 35,
+    },
+    {
+      format: 'Трехкомнатная',
+      index: 'Ижевск-Трехкомнатная',
+      discount: 50,
+    },
+    {
+      format: 'Евро Четырехкомнатная',
+      index: 'Ижевск-Евро четырекомнатная',
+      discount: 50,
+    },
+    {
+      format: 'Четырехкомнатная',
+      index: 'Ижевск-Четырекомнатная',
+      discount: 50,
+    }
+  ],
+  "Ульяновск": [
+    {
+      format: 'Студия',
+      index: 'Ульяновск-Студия',
+      discount: 20,
+    },
+    {
+      format: 'Однокомнатная',
+      index: 'Ульяновск-Однокомнатная',
+      discount: 20,
+    },
+    {
+      format: 'Евро двухкомнатная',
+      index: 'Ульяновск-Евро двухкомнатная',
+      discount: 20,
+    },
+    {
+      format: 'Двухкомнатная',
+      index: 'Ульяновск-Двухкомнатная',
+      discount: 35,
+    },
+    {
+      format: 'Евро трехкомнатная',
+      index: 'Ульяновск-Евро трехкомнатная',
+      discount: 35,
+    },
+    {
+      format: 'Трехкомнатная',
+      index: 'Ульяновск-Трехкомнатная',
+      discount: 50,
+    },
+    {
+      format: 'Евро четырехкомнатная',
+      index: 'Ульяновск-Евро четырехкомнатная',
+      discount: 50,
+    },
+    {
+      format: 'Четырехкомнатная',
+      index: 'Ульяновск-Четырехкомнатная',
+      discount: 50,
+    },
+  ],
+};
+
 export default {
   name: "HomePage",
   data() {
@@ -360,55 +541,23 @@ export default {
       data: null,
       isAlert: false,
       valid: true,
-      banksList: [
-        "ПАО СБЕРБАНК",
-        "АО АЛЬФА-БАНК",
-        "БАНК ВТБ (ПАО)",
-        "ПАО ПРОМСВЯЗЬБАНК",
-      ],
-      bankPrograms: {
-        "ПАО СБЕРБАНК": [
-          {
-            bankName: "ПАО СБЕРБАНК",
-            debtCommissionInterest: 0,
-            debtInterestRate: 1.7,
-            debtMinimalStartInterest: 15,
-            discount: "3",
-            interestRates: [
-              {
-                comission: 0,
-                debtMaxSum: 6000000,
-                firstPaymentMin: 15,
-                months: "0-360",
-                rate: 3,
-                id: 0,
-                get nameRate() {
-                  return `Ставка: ${this.rate} Срок: ${this.months} мес.`;
-                },
-              },
-              {
-                comission: 0,
-                debtMaxSum: 6000000,
-                firstPaymentMin: 15,
-                months: "12-24",
-                rate: 1.7,
-                id: 0,
-                get nameRate() {
-                  return `Ставка: ${this.rate} Срок: ${this.months} мес.`;
-                },
-              },
-            ],
-            programId: 0,
-            programName: "Госпрограмма 2020",
-          },
-        ],
-      },
       finishingCbox: false,
+      selectedCity: null,
       selectedBank: null,
       selectedBankProgram: null,
-      selectedRates: null,
       costObject: 0,
+      objectArea: 0,
+      terraceArea: 0,
+      selectedFormatObject: null,
+      selectedCurrentTypeTrim: null,
+      selectedNewTypeTrim: null,
+      payReserv: null,
+      UDS: 0,
+      tradeIn: null,
+      speedDiscount: null,
       downPayment: 0,
+      creditPeriod: 0,
+      selectedRates: null,
       downPaymentRules: [
         (v) => !!v || "Введите первоначальный взнос",
         (v) =>
@@ -424,7 +573,11 @@ export default {
         (v) => (v && !!this.selectedRates) || "Ставка не выбрана",
         (v) => v && this.isInRange(+this.mortgageTerm),
       ],
-      costMonth: 0,
+      newCostObjectTrim: 0,
+      totalCostObjectTrimAndDiscount: 0,
+      standartCostMonth: 0,
+      costMonthPeriodSub: 0,
+      monthBenefit: 0,
     };
   },
   async mounted() {
@@ -437,10 +590,141 @@ export default {
     localStorage.data = JSON.stringify(data);
   },
   computed: {
-    getRates() {
-      const program = this.bankPrograms[this.selectedBank];
-      if (!program) return [];
-      return this.bankPrograms[this.selectedBank][0].interestRates;
+    // наименование банков
+    getBanks() {
+      if (!this.data) return [];
+      const bankNames = new Set();
+      this.data.forEach((obj) => {
+        obj.bank && bankNames.add(obj.bank);
+      });
+      return [...bankNames];
+    },
+    // общая площадь в расчете отделки
+    calcTotalAreaTrim() {
+      if (!this.selectedNewTypeTrim) return 0;
+      switch (this.selectedNewTypeTrim) {
+        case "Базовая" || "Получистовая":
+          return this.objectArea;
+        case "Чистовая - STONE" || "Чистовая - WOOD":
+          return +this.terraceArea > 0
+            ? (this.objectArea - this.terraceArea) * 0.3
+            : 0;
+        default:
+          return this.objectArea;
+      }
+    },
+    // стоимость базовой получистовой отделки
+    calcCostBasePolCTrim() {
+      if (!this.selectedCurrentTypeTrim) return 0;
+      switch (this.selectedCurrentTypeTrim) {
+        case "Базовая" || "Получистовая":
+          return +this.objectArea * +priceTrim[this.selectedCurrentTypeTrim];
+        default:
+          return 0;
+      }
+    },
+    //стоимость на чистовую отделку
+    calcCostCleanTrim() {
+      if (!this.selectedCurrentTypeTrim || !this.selectedNewTypeTrim) return 0;
+      if (
+        (this.selectedCurrentTypeTrim === "Базовая" &&
+          this.selectedNewTypeTrim === "Чистовая - STONE") ||
+        (this.selectedCurrentTypeTrim === "Получистовая" &&
+          this.selectedNewTypeTrim === "Чистовая - STONE") ||
+        (this.selectedCurrentTypeTrim === "Базовая" &&
+          this.selectedNewTypeTrim === "Чистовая - WOOD") ||
+        (this.selectedCurrentTypeTrim === "Получистовая" &&
+          this.selectedNewTypeTrim === "Чистовая - WOOD")
+      )
+        return (
+          this.calcTotalAreaTrim *
+          (+priceTrim[this.selectedNewTypeTrim] -
+            +priceTrim[this.selectedCurrentTypeTrim])
+        );
+      return 0;
+    },
+    //стоимость черновой
+    calcBlackCost() {
+      if (!this.selectedCurrentTypeTrim) return 0;
+      switch (this.selectedCurrentTypeTrim) {
+        case "Черновая":
+          return this.costObject;
+        case "НЕТ":
+          return 0;
+        default:
+          return (
+            (+this.costObject / +this.objectArea -
+              +priceTrim[this.selectedCurrentTypeTrim]) *
+            +this.objectArea
+          );
+      }
+    },
+    // скидка на чистовую отделку
+    calcDiscountCleanTrim() {
+      if (this.selectedNewTypeTrim !== 'Чистовая - WOOD' && this.selectedNewTypeTrim !== 'Чистовая - STONE') return 0;
+      if (!this.selectedCity) return 0;
+      const result = discountCl[this.selectedCity].find((obj) => obj.index === `${this.selectedCity}-${this.selectedFormatObject}`);
+      if (!result) return 0;
+      return (+result.discount / 100) * +this.calcCostCleanTrim;
+    },
+    // новая стоимость объекта с учетом отделки
+    calcNewCostIncludeTrim() {
+      return (
+        +this.calcBlackCost +
+        +this.calcCostBasePolCTrim +
+        +this.calcCostCleanTrim
+      );
+    },
+    // Итого стоимость объекта с учетом отделки и скидки
+    calcTotalCostObjectIncludeTrimAndDiscount() {
+      const usd = (+this.calcNewCostIncludeTrim - +this.payReserv) * 0.1;
+      if (this.UDS > +usd) return 0;
+      const i =
+        +this.calcBlackCost +
+        +this.calcCostBasePolCTrim +
+        +this.calcCostCleanTrim -
+        +this.calcDiscountCleanTrim;
+
+      const result =
+        i -
+        +this.payReserv -
+        +this.UDS -
+        +this.tradeIn -
+        (i - +this.payReserv - +this.UDS - +this.tradeIn) * (this.speedDiscount?.value / 100);
+      if (isNaN(parseFloat(result)) || !isFinite(result)) return 0;
+      return result;
+    },
+    // сумма первоначального взноса
+    calcDownPayment() {
+      return +this.calcTotalCostObjectIncludeTrimAndDiscount * (+this.downPayment / 100);
+    },
+    // сумма кредита
+    calcCreditSum() {
+      return +this.calcTotalCostObjectIncludeTrimAndDiscount - +this.calcDownPayment;
+    },
+    standartMonthPay() {
+      const standartRate = this.getSelectedBankProgram[0]?.standartRate.replace('%', '').replace(',', '.');
+      const result =
+        (+this.calcCreditSum *
+          (+standartRate / 100 / 12) *
+          +this.creditPeriod) / +this.creditPeriod +
+        +this.calcCreditSum / +this.creditPeriod;
+      
+      if (isNaN(parseFloat(result)) || !isFinite(result)) return 0;
+      return result.toFixed(2);
+    },
+    // список программ по банку
+    getBankPrograms() {
+      if (!this.data) return [];
+      const selectedBank = this.data.filter((obj) => obj.bank === this.selectedBank);
+      const array = selectedBank.map((obj) => obj.bankProgram);
+      return [...new Set(array)];
+    },
+    // получить выбранную программу
+    getSelectedBankProgram() {
+      if (!this.data) return [];
+      const selectedProgram = this.data.filter((obj) => obj.bank === this.selectedBank).filter((obj) => obj.bankProgram === this.selectedBankProgram);
+      return selectedProgram;
     },
     downPaymentPerc() {
       const result = ((this.downPayment * 100) / this.costObject).toFixed(2);
