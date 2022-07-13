@@ -28,13 +28,13 @@
 
               <v-select
                 v-model="selectedBank"
-                @update:modelValue="clearSelectedRatesAndMortgage"
                 :items="getBanks"
                 :rules="[(v) => !!v || 'Кредитная организация не выбрана']"
                 label="Выберите кредитную организацию"
                 variant="solo"
                 no-data-text="Пусто"
                 required
+                @update:modelValue="clearSelectedCreditOrgan"
               ></v-select>
 
               <v-select
@@ -45,7 +45,7 @@
                 label="Выберите программу кредитования"
                 no-data-text="Пусто"
                 required
-                @update:modelValue="clearSelectedRates"
+                @update:modelValue="clearSelectedCreditProgram"
               ></v-select>
             </v-container>
 
@@ -198,6 +198,8 @@
                 v-model="speedDiscount"
                 :items="[
                   { title: '0%', value: 0 },
+                  { title: '1%', value: 1 },
+                  { title: '2%', value: 2 },
                   { title: '3%', value: 3 },
                 ]"
                 :return-object="true"
@@ -215,9 +217,6 @@
               fluid
               class="fill-height my-5 px-8 pt-10 rounded-lg bg-grey-lighten-3"
             >
-              <v-list-subheader class="font-weight-black"
-                >Минимальный размер ПВ {{ getSelectedBankProgram[0]?.downPayment || 0 }}</v-list-subheader
-              >
               <v-text-field
                 v-model="downPayment"
                 :rules="downPaymentRules"
@@ -258,26 +257,22 @@
               fluid
               class="fill-height my-5 px-8 pt-5 rounded-lg bg-grey-lighten-3"
             >
-              <v-list-subheader class="font-weight-black"
-                >Уточнить</v-list-subheader
-              >
               <v-select
-                v-model="selectedRates"
-                :return-object="true"
-                item-title="nameRate"
-                :items="[]"
+                v-model="selectedSubPeriod"
+                :items="getArraySubPeriod"
                 variant="solo"
                 :rules="[(v) => !!v || 'Ставка не выбрана']"
                 label="Срок субсидирования, месяцев"
                 no-data-text="Пусто"
                 required
+                @update:modelValue="clearSelectedSubPeriod"
               ></v-select>
 
               <v-select
-                v-model="selectedRates"
+                v-model="selectedTotalRates"
                 :return-object="true"
-                item-title="nameRate"
-                :items="[]"
+                item-title="title"
+                :items="getArraySubTerms"
                 variant="solo"
                 :rules="[(v) => !!v || 'Ставка не выбрана']"
                 label="Итоговая ставка с учетом субсидирования, % годовых"
@@ -287,7 +282,7 @@
               <v-list-item-subtitle class="font-weight-black text-wrap"
                 >Процент удорожания</v-list-item-subtitle
               >
-              <div class="text-h4 mb-2" style="word-break: break-word">0</div>
+              <div class="text-h4 mb-2" style="word-break: break-word">{{ calcPercApprRate }}%</div>
             </v-container>
 
             <!--  -->
@@ -295,19 +290,22 @@
               fluid
               class="fill-height mt-5 px-6 pt-6 rounded-lg bg-grey-lighten-3"
             >
+              <v-list-item-title class="font-weight-black text-wrap mb-5"
+                >ИТОГОВАЯ СУММА ДДУ</v-list-item-title
+              >
               <v-list-item-subtitle class="font-weight-black text-wrap"
                 >Стоимость объекта недвижимости с учетом
                 удорожания</v-list-item-subtitle
               >
-              <div class="text-h4" style="word-break: break-word">0</div>
+              <div class="text-h4" style="word-break: break-word">{{ calcObjectIncludeAppr }}</div>
               <v-list-item-subtitle class="mt-5 font-weight-black text-wrap"
                 >Уточнение суммы первоначального взноса</v-list-item-subtitle
               >
-              <div class="text-h4" style="word-break: break-word">0</div>
+              <div class="text-h4" style="word-break: break-word">{{ calcClarSumFirstContr }}</div>
               <v-list-item-subtitle class="mt-5 font-weight-black text-wrap"
                 >Сумма кредита</v-list-item-subtitle
               >
-              <div class="text-h4" style="word-break: break-word">0</div>
+              <div class="text-h4" style="word-break: break-word">{{ calcSumCredit }}</div>
             </v-container>
           </v-form>
         </v-col>
@@ -322,11 +320,16 @@
           <v-list-item-subtitle class="mt-5 font-weight-black text-wrap"
             >Сумма удорожания</v-list-item-subtitle
           >
-          <div class="text-h4" style="word-break: break-word">0</div>
+          <div class="text-h4" style="word-break: break-word">{{ calcSumAppr }}</div>
           <v-list-item-subtitle class="mt-5 font-weight-black text-wrap"
             >Размер КВ, %</v-list-item-subtitle
           >
-          <div class="text-h4" style="word-break: break-word">0</div>
+          <div class="text-h4" style="word-break: break-word">{{ calcKVSize }}%</div>
+          <v-list-item-subtitle class="mt-5 font-weight-black text-wrap"
+            >Размер КВ, руб.</v-list-item-subtitle
+          >
+          <div class="text-h4" style="word-break: break-word">{{ calcKVSizeRUB }}</div>
+          
         </div>
         <div class="mt-5 px-8 py-7 rounded-lg bg-grey-lighten-3">
           <v-list-item-subtitle class="font-weight-black text-wrap"
@@ -352,9 +355,9 @@
             {{ standartMonthPay }}
           </div>
 
-          <v-col class="d-flex px-0 py-0" style="gap: 20px">
+          <v-col class="d-flex px-0 py-0 justify-space-between">
             <v-col
-              cols="8"
+              cols="6"
               class="px-0 py-0 d-flex flex-column justify-space-between"
             >
               <v-list-item-subtitle class="mt-5 font-weight-black text-wrap"
@@ -366,13 +369,13 @@
               </div>
             </v-col>
             <v-col
-              cols="4"
+              cols="5"
               class="px-0 py-0 d-flex flex-column justify-space-between"
             >
               <v-list-item-subtitle class="mt-5 font-weight-black text-wrap"
                 >Выгода в месяц</v-list-item-subtitle
               >
-              <div class="text-h4" style="word-break: break-word">{{ monthBenefit }}</div>
+              <div class="text-h4" style="word-break: break-word">{{ benefitMonth }}</div>
             </v-col>
           </v-col>
 
@@ -557,12 +560,17 @@ export default {
       speedDiscount: null,
       downPayment: 0,
       creditPeriod: 0,
+      selectedSubPeriod: null,
+      selectedTotalRates: null,
       selectedRates: null,
       downPaymentRules: [
         (v) => !!v || "Введите первоначальный взнос",
-        (v) =>
-          (v && (+this.downPayment * 100) / +this.costObject >= 15) ||
-          "Первоначальный взнос должен быть не меньше 15%",
+        (v) => {
+          const perc = +this.getSelectedBankProgram[0]?.downPayment.replace('%', '').replace(',', '.');
+          if (isNaN(parseFloat(perc)) || !isFinite(perc)) return false;
+          return (v && this.downPayment >= perc) ||
+            `Первоначальный взнос должен быть не меньше ${perc}%`;
+        },
         (v) =>
           (v && +this.costObject >= +this.downPayment) ||
           "Первоначальный взнос не может быть больше стоимости объекта",
@@ -576,7 +584,6 @@ export default {
       newCostObjectTrim: 0,
       totalCostObjectTrimAndDiscount: 0,
       standartCostMonth: 0,
-      costMonthPeriodSub: 0,
       monthBenefit: 0,
     };
   },
@@ -584,10 +591,12 @@ export default {
     if (localStorage.data) {
       this.data = JSON.parse(localStorage.data);
     }
-    const data = await fetch("http://localhost:4000/").then((res) =>
-      res.json()
-    );
-    localStorage.data = JSON.stringify(data);
+    try {
+      const data = await fetch("http://localhost:4000/").then((res) =>
+        res.json()
+      );
+      localStorage.data = JSON.stringify(data);
+    } catch (err) {console.error(err);}
   },
   computed: {
     // наименование банков
@@ -616,12 +625,9 @@ export default {
     // стоимость базовой получистовой отделки
     calcCostBasePolCTrim() {
       if (!this.selectedCurrentTypeTrim) return 0;
-      switch (this.selectedCurrentTypeTrim) {
-        case "Базовая" || "Получистовая":
-          return +this.objectArea * +priceTrim[this.selectedCurrentTypeTrim];
-        default:
-          return 0;
-      }
+      const result = +this.objectArea * +priceTrim[this.selectedCurrentTypeTrim];
+      if (isNaN(parseFloat(result)) || !isFinite(result) || !result) return 0;
+      return result.toFixed(2);
     },
     //стоимость на чистовую отделку
     calcCostCleanTrim() {
@@ -669,11 +675,9 @@ export default {
     },
     // новая стоимость объекта с учетом отделки
     calcNewCostIncludeTrim() {
-      return (
-        +this.calcBlackCost +
-        +this.calcCostBasePolCTrim +
-        +this.calcCostCleanTrim
-      );
+      const result = +this.calcBlackCost + +this.calcCostBasePolCTrim + +this.calcCostCleanTrim;
+      if (isNaN(parseFloat(result)) || !isFinite(result) || !result) return 0;
+      return result.toFixed(2);
     },
     // Итого стоимость объекта с учетом отделки и скидки
     calcTotalCostObjectIncludeTrimAndDiscount() {
@@ -692,24 +696,130 @@ export default {
         +this.tradeIn -
         (i - +this.payReserv - +this.UDS - +this.tradeIn) * (this.speedDiscount?.value / 100);
       if (isNaN(parseFloat(result)) || !isFinite(result)) return 0;
-      return result;
+      return result.toFixed(2);
     },
     // сумма первоначального взноса
     calcDownPayment() {
-      return +this.calcTotalCostObjectIncludeTrimAndDiscount * (+this.downPayment / 100);
+      const result = +this.calcTotalCostObjectIncludeTrimAndDiscount * (+this.downPayment / 100);
+      if (isNaN(parseFloat(result)) || !isFinite(result) || !result) return 0;
+      return result.toFixed(2);
     },
     // сумма кредита
     calcCreditSum() {
-      return +this.calcTotalCostObjectIncludeTrimAndDiscount - +this.calcDownPayment;
+      const result = +this.calcTotalCostObjectIncludeTrimAndDiscount - +this.calcDownPayment;
+      if (isNaN(parseFloat(result)) || !isFinite(result) || !result) return 0;
+      return result.toFixed(2);
     },
+    // размер кв, %
+    calcKVSize() {
+      const program = this.getSelectedBankProgram.find((obj) => {
+        return obj.discountPeriod === this.selectedSubPeriod && obj.rateGracePeriod === this.selectedTotalRates?.title && obj
+      });
+      return +program?.sizeCV.replace("%", "").replace(",", ".") || 0;
+    },
+    // выгода в месяц
+    benefitMonth() {
+      const result = +this.standartMonthPay - +this.costMonthPeriodSub;
+      if (isNaN(parseFloat(result)) || !isFinite(result) || !result) return 0;
+      return result.toFixed(2);
+    },
+    // ежемесячный платеж на период субсидирования
+    costMonthPeriodSub() {
+      console.log(+this.calcSumCredit, (+this.selectedTotalRates?.value / 100 / 12), (1 + +this.calcSumCredit / +this.creditPeriod))
+      const result =
+        +this.calcSumCredit *
+        ((+this.selectedTotalRates?.value / 100 / 12) * 1) + +this.calcSumCredit / +this.creditPeriod;
+      if (isNaN(parseFloat(result)) || !isFinite(result) || !result) return 0;
+      return result.toFixed(2);
+    },
+    // размер кв, руб
+    calcKVSizeRUB() {
+      const result = (+this.calcKVSize / 100) * +this.calcSumCredit;
+      if (isNaN(parseFloat(result)) || !isFinite(result) || !result) return 0;
+      return result.toFixed(2);
+    },
+    // сумма удорожания
+    calcSumAppr() {
+      const result = +this.calcObjectIncludeAppr - +this.calcTotalCostObjectIncludeTrimAndDiscount;
+      if (isNaN(parseFloat(result)) || !isFinite(result) || !result) return 0;
+      return result.toFixed(2);
+    },
+    // стоимость объекта недвижимости с учетом удорожания
+    calcObjectIncludeAppr() {
+      const result =
+        +this.calcTotalCostObjectIncludeTrimAndDiscount *
+        (1 + +this.calcPercApprRate / 100);
+      if (isNaN(parseFloat(result)) || !isFinite(result) || !result) return 0;
+      return result.toFixed(2);
+    },
+    // уточнение суммы первоначального взноса
+    calcClarSumFirstContr() {
+      const result = +this.calcObjectIncludeAppr * (+this.downPayment / 100);
+      if (isNaN(parseFloat(result)) || !isFinite(result) || !result) return 0;
+      return result.toFixed(2);
+    },
+    // сумма кредита
+    calcSumCredit() {
+      const result = +this.calcObjectIncludeAppr - +this.calcClarSumFirstContr;
+      if (isNaN(parseFloat(result)) || !isFinite(result) || !result) return 0;
+      return result.toFixed(2);
+    },
+    // массив срока субсидирования
+    getArraySubPeriod() {
+      const program = this.getSelectedBankProgram;
+      if (!program.length) return [];
+      const discountPeriod = program.map((obj) => {
+        return obj.discountPeriod;
+      });
+      if (!discountPeriod.length) return [];
+      return [...new Set(discountPeriod)];
+    },
+    // массив ставок с учетом субсидий
+    getArraySubTerms() {
+      const terms = this.getSelectedBankProgram.filter((obj) => obj.discountPeriod === this.selectedSubPeriod);
+      if (!terms.length) return [];
+      const rateGracePeriod = terms.map((obj) => {
+        return {
+          title: obj.rateGracePeriod,
+          value: obj.rateGracePeriod.replace("%", "").replace(",", "."),
+        };
+      });
+      if (!rateGracePeriod.length) return [];
+      return rateGracePeriod;
+    },
+    // процент удорожания
+    calcPercApprRate() {
+      if (!this.calcKVSize) return 0;
+      let perc = 0;
+      if (+this.downPayment <= 20 && (+this.selectedTotalRates?.value > 1.5 && +this.selectedTotalRates?.value <= 2))
+        perc = 1;
+      else if (+this.downPayment <= 20 && (+this.selectedTotalRates?.value > 1 && +this.selectedTotalRates?.value <= 1.5))
+        perc = 2;
+      else if (+this.downPayment <= 20 && (+this.selectedTotalRates?.value > 0.5 && +this.selectedTotalRates?.value <= 1))
+        perc = 3;
+      else if (+this.downPayment <= 20 && (+this.selectedTotalRates?.value > 0 && +this.selectedTotalRates?.value <= 0.5))
+        perc = 4;
+
+      const result =
+        (+this.calcKVSize / 100 +
+          0.5 / 100 +
+          perc / 100) *
+        100;
+
+      if (isNaN(parseFloat(result)) || !isFinite(result)) return 0;
+      return result.toFixed(2);
+    },
+    // Стандартный ежемесячный платеж
     standartMonthPay() {
-      const standartRate = this.getSelectedBankProgram[0]?.standartRate.replace('%', '').replace(',', '.');
+      const standartRate = this.getSelectedBankProgram[0]?.standartRate
+        .replace("%", "")
+        .replace(",", ".");
       const result =
         (+this.calcCreditSum *
           (+standartRate / 100 / 12) *
           +this.creditPeriod) / +this.creditPeriod +
         +this.calcCreditSum / +this.creditPeriod;
-      
+
       if (isNaN(parseFloat(result)) || !isFinite(result)) return 0;
       return result.toFixed(2);
     },
@@ -759,13 +869,20 @@ export default {
       this.$refs.form.validate();
       if (this.valid) this.isAlert = true;
     },
-    clearSelectedRatesAndMortgage() {
+    clearSelectedCreditOrgan() {
       this.selectedBankProgram = null;
       this.selectedRates = null;
+      this.selectedSubPeriod = null;
+      this.selectedTotalRates = null;
     },
-    clearSelectedRates() {
+    clearSelectedCreditProgram() {
+      this.selectedSubPeriod = null;
+      this.selectedTotalRates = null;
       this.selectedRates = null;
     },
+    clearSelectedSubPeriod() {
+      this.selectedTotalRates = null;
+    }
   },
 };
 </script>
