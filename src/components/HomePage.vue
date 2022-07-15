@@ -1,5 +1,5 @@
 <template>
-  <v-container class="d-sm-flex">
+  <v-container class="mrg-for-btn d-sm-flex">
     <v-dialog v-model="isAlert">
       <v-card>
         <v-card-text class="text-center"> Ошибок нет </v-card-text>
@@ -409,16 +409,18 @@
           >
           <div class="text-h4" style="word-break: break-word">{{ toLocaleString(calcSumCredit, {style: 'currency', currency: 'RUB'}) }}</div>
         </div>
-        <div class="mt-5 px-8 py-7 rounded-lg bg-grey-lighten-3">
-          <v-btn
-            color="success"
-            block
-            class="text-wrap"
-            size="x-large"
-            @click="validate"
-          >
-            Проверить
-          </v-btn>
+        <div class="container-btn">
+          <div class="mt-5 px-8 py-7 rounded-lg bg-grey-lighten-3">
+            <v-btn
+              color="success"
+              block
+              class="text-wrap"
+              size="x-large"
+              @click="validate"
+            >
+              Проверить
+            </v-btn>
+          </div>
         </div>
       </div>
     </v-col>
@@ -981,3 +983,19 @@ export default {
   },
 };
 </script>
+
+
+<style>
+@media (max-width: 600px) {
+  .container-btn {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    left: 0;
+    padding: 28px;
+  }
+  .mrg-for-btn {
+    margin-bottom: 134px;
+  }
+}
+</style>
